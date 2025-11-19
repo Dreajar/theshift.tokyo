@@ -170,11 +170,11 @@ type ListItemProps = {
 };
 
 const listItems: ListItemProps[] = [
-    { num: '01', title: 'FOCUS ON STRETCH PLEATS', height: 'h-72', width: 'w-5/8', hrBottom: 0 },
+    { num: '01', title: 'FOCUS ON STRETCH PLEATS', height: 'h-72', width: 'w-7/12', hrBottom: 0 },
     { num: '02', title: 'LEVEL OF DISTANCE', height: 'h-72', width: 'w-1/2', hrBottom: 0 },
-    { num: '03', title: 'IPSA AQUA PLAY ART', height: 'h-72', width: 'w-1/3', hrBottom: 0 },
+    { num: '03', title: 'IPSA AQUA PLAY ART', height: 'h-72', width: 'w-5/12', hrBottom: 0 },
     { num: '04', title: 'ATELIER WEN', height: 'h-72', width: 'w-1/2', hrBottom: 0 },
-    { num: '05', title: '3D:MIX', height: 'h-136', width: 'w-1/2', hrBottom: 64 },
+    { num: '05', title: '3D:MIX', height: 'h-136', width: 'w-1/2', hrBottom: 24 },
 ];
 
 const ListItem: React.FC<ListItemProps> = ({ num, title, height, width, hrBottom }) => {
@@ -241,7 +241,7 @@ const ListItem: React.FC<ListItemProps> = ({ num, title, height, width, hrBottom
             </p>
 
             {/* The HR separator */}
-            <hr className={`h-[2px] w-full bg-neutral-500 opacity-20 absolute bottom-${hrBottom} left-1/2 -translate-x-1/2`}></hr>
+            <hr className={`h-[2px] w-11/12 bg-neutral-500 opacity-20 absolute bottom-${hrBottom} left-1/2 -translate-x-1/2`}></hr>
         </li>
     );
 };
@@ -249,7 +249,7 @@ const ListItem: React.FC<ListItemProps> = ({ num, title, height, width, hrBottom
 // Main component to render the list
 const PortfolioList = () => {
     return (
-        <div className="min-h-screen bg-zinc-100 text-neutral-900 font-inter">
+        <div className="min-h-screen w-full bg-zinc-100 text-neutral-900 font-inter">
             <ol className="items-start w-full">
                 {listItems.map((item, index) => (
                     <ListItem
