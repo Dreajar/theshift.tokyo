@@ -41,12 +41,12 @@ export default function Home() {
             <div className="bg-zinc-100 h-screen flex flex-col justify-center items-center text-black">
                 <button className="absolute translate-x-144 -translate-y-96 border-black border-[1px] h-7 w-12 rounded-full">JA</button>
                 <div className="-space-y-[92px] -translate-y-24">
-                    <h1 className="mt-40 text-[152px] w-200 -translate-x-12 font-display">EXPLORING</h1>
+                    <h1 className="mt-40 text-[152px] w-200 -translate-x-12 font-[Cormorant_Upright]">EXPLORING</h1>
                     <h1 className="text-[152px] w-200 -translate-x-[320px]">THE SHIFT</h1>
-                    <h1 className="text-[152px] w-200 font-display">OF TODAY</h1>
+                    <h1 className="text-[152px] w-200 font-[Cormorant_Upright]">OF TODAY</h1>
                 </div>
                 {/* FIX: Change HTML/CSS editor to not strip these whitespaces lmao */}
-                <pre className="absolute text-sm translate-x-120 -translate-y-12 w-80 leading-4">
+                <pre className="absolute text-sm translate-x-104 -translate-y-12 w-80 leading-4">
                     ________THE SHIFT CREATES FUTURE-<br />
                     INSPIRED PROJECTS FOR PEOPLE AND<br />
                     BUSINESSES DESIRING A SHIFT. BASED IN<br />
@@ -111,7 +111,7 @@ export default function Home() {
 
                     <span className="flex space-x-10 mx-20">
                         <span>GET</span>
-                        <span>IN</span>
+                        <span className="font-[Cormorant_Upright] text-[144px]">IN</span>
                         <span>TOUCH</span>
                     </span>
 
@@ -170,11 +170,11 @@ type ListItemProps = {
 };
 
 const listItems: ListItemProps[] = [
-    { num: '01', title: 'FOCUS ON STRETCH PLEATS', height: 'h-72', width: 'w-7/12', hrBottom: 0 },
-    { num: '02', title: 'LEVEL OF DISTANCE', height: 'h-72', width: 'w-1/2', hrBottom: 0 },
-    { num: '03', title: 'IPSA AQUA PLAY ART', height: 'h-72', width: 'w-5/12', hrBottom: 0 },
+    { num: '01', title: 'FOCUS ON STRETCH PLEATS', height: 'h-72', width: 'w-5/12', hrBottom: 0 },
+    { num: '02', title: 'LEVEL OF DISTANCE', height: 'h-72', width: 'w-3/8', hrBottom: 0 },
+    { num: '03', title: 'IPSA AQUA PLAY ART', height: 'h-72', width: 'w-1/3', hrBottom: 0 },
     { num: '04', title: 'ATELIER WEN', height: 'h-72', width: 'w-1/2', hrBottom: 0 },
-    { num: '05', title: '3D:MIX', height: 'h-136', width: 'w-1/2', hrBottom: 24 },
+    { num: '05', title: '3D:MIX', height: 'h-72', width: 'w-1/2', hrBottom: 0 }
 ];
 
 const ListItem: React.FC<ListItemProps> = ({ num, title, height, width, hrBottom }) => {
@@ -228,14 +228,14 @@ const ListItem: React.FC<ListItemProps> = ({ num, title, height, width, hrBottom
         >
             <span
                 ref={numRef}
-                className="text-neutral-500 text-sm ml-32 mr-10 relative z-10 inline-block transform-gpu"
+                className="text-neutral-500 text-sm ml-64 mr-10 relative z-10 inline-block transform-gpu"
             >
                 ( {num} )
             </span>
 
             <p
                 ref={titleRef}
-                className={`text-8xl text-left text-neutral-900 ${width} relative z-10 inline-block transform-gpu`}
+                className={`text-8xl text-left text-neutral-900 ${width} relative z-10 inline-block transform-gpu font-[Cormorant_Upright]`}
             >
                 {title}
             </p>
@@ -309,10 +309,10 @@ const InfiniteMarquee: React.FC<InfiniteMarqueeProps> = ({ bannerString, directi
     return (
         <div
             ref={containerRef}
-            className="w-full overflow-hidden whitespace-nowrap bg-neutral-900 text-white py-4"
+            className="w-full overflow-hidden whitespace-nowrap bg-neutral-900 text-white -my-2"
         >
             {/* The inline-block is crucial for the scrollWidth calculation to work */}
-            <div ref={textRef} className="inline-block text-9xl font-thin tracking-wide whitespace-pre">
+            <div ref={textRef} className="inline-block text-9xl font-thin tracking-wide whitespace-pre font-[Cormorant_Upright]">
                 {bannerString}
                 {bannerString}
             </div>
