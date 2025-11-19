@@ -193,6 +193,19 @@ type ImageRevealProps = {
 
 const ImageRevealArea: React.FC<ImageRevealProps> = ({ hoveredImage, isVisible }) => {
     const imageContainerRef = useRef<HTMLDivElement>(null);
+
+    const incomingImageLayerRef = useRef<HTMLDivElement>(null); // Ref for the sliding layer
+
+    // 💡 Layer 1: The image currently displayed as the 'base'
+    const [currentImage, setCurrentImage] = useState<ImageDetails | null>(hoveredImage);
+    // 💡 Layer 2: The image that is actively sliding up to cover the base
+    const [incomingImage, setIncomingImage] = useState<ImageDetails | null>(null);
+
+
+
+
+
+
     const imageRef = useRef<HTMLImageElement>(null);
     const [displayedImageUrl, setDisplayedImageUrl] = useState(hoveredImage?.url || null);
     const imageTimeline = useRef<gsap.core.Timeline | null>(null);
@@ -243,47 +256,60 @@ const ImageRevealArea: React.FC<ImageRevealProps> = ({ hoveredImage, isVisible }
     }, [isVisible]);
 
 
-    // 3. FIX: Manage Image URL update (Runs first when a new image is hovered)
-    // This updates the URL state and forces a React re-render.
+    // 3. 💡 NEW: Bottom-Up Image Transition Logic
     useEffect(() => {
-        if (hoveredImage && hoveredImage.url !== displayedImageUrl) {
-            setDisplayedImageUrl(hoveredImage.url);
-        }
-    }, [hoveredImage]); // Only depends on the incoming hoveredImage
-
-
-    // 4. FIX: Run Animation after URL state updates (Runs *after* the re-render when the DOM has the new image URL)
-    useEffect(() => {
-        if (!displayedImageUrl) return;
-
-        const imageElement = imageRef.current;
-
-        // CRITICAL CHECK: Ensure the DOM element's source matches the URL we are about to animate.
-        // Also check if we just mounted (imageElement.src check)
-        if (!imageElement || imageElement.src.indexOf(displayedImageUrl) === -1) {
+        if (!hoveredImage) {
+            // If no image is hovered, ensure incoming image is cleared and timeline killed
+            if (imageTimeline.current) {
+                imageTimeline.current.kill();
+                imageTimeline.current = null;
+            }
+            setIncomingImage(null);
             return;
         }
 
-        // Kill any previous animation
+        // If the hovered image is already the current base image, no transition needed
+        if (currentImage?.url === hoveredImage.url) {
+            // Ensure incoming is also null or matches current if it's the same image
+            setIncomingImage(null);
+            return;
+        }
+
+        const incomingLayer = incomingImageLayerRef.current;
+        if (!incomingLayer) return;
+
+        // 1. Set the new image data for the incoming (sliding) layer
+        // This causes React to render the new image into Layer 2, off-screen.
+        setIncomingImage(hoveredImage);
+
+        // Kill any existing timeline to prevent conflicts
         if (imageTimeline.current) {
             imageTimeline.current.kill();
         }
+
+        // Create a new timeline for the animation
         imageTimeline.current = gsap.timeline({ paused: true });
 
-        // Set the element off-screen (y: 100%) and then animate it up (slide-in)
         imageTimeline.current
-            .fromTo(imageElement,
-                { y: '100%' },
-                {
-                    y: '0%',
-                    duration: 0.5,
-                    ease: 'power2.out',
+            // 2. Set the incoming layer to start from the bottom (off-screen)
+            .set(incomingLayer, { y: '100%', autoAlpha: 1 }) // autoAlpha ensures it's visible during animation
+            // 3. Animate the incoming layer up to cover the current image
+            .to(incomingLayer, {
+                y: '0%',
+                duration: 0.5,
+                ease: 'power2.out',
+                onComplete: () => {
+                    // 4. ON COMPLETE: Update the base image (Layer 1) to the new image
+                    setCurrentImage(hoveredImage);
+                    // 5. Reset the incoming layer (Layer 2) for the next transition
+                    gsap.set(incomingLayer, { y: '100%', autoAlpha: 0 }); // Hide it off-screen
+                    setIncomingImage(null); // Clear the data from Layer 2
                 }
-            )
+            });
 
         imageTimeline.current.play();
 
-    }, [displayedImageUrl]); // Dependency on the DOM-bound URL state, ensuring it runs after state update
+    }, [hoveredImage, currentImage]); // Depend on hoveredImage and currentImage for state changes
 
     return (
         <div
@@ -292,16 +318,33 @@ const ImageRevealArea: React.FC<ImageRevealProps> = ({ hoveredImage, isVisible }
         >
             <div className="w-[300px] h-[300px] rounded-lg shadow-2xl overflow-hidden relative">
 
-                {displayedImageUrl && (
+                {/* 💡 LAYER 1: The Stationary (Current/Old) Image */}
+                {/* This image is always visible and provides the background during transition */}
+                {currentImage && (
                     <img
-                        ref={imageRef}
-                        // Use a key to ensure React remounts/updates the element cleanly if needed, though state should handle it
-                        key={displayedImageUrl}
-                        src={displayedImageUrl}
-                        alt={hoveredImage?.alt || 'Portfolio Image'}
-                        className="absolute inset-0 w-full h-full object-cover transform-gpu" // Base layer
+                        src={currentImage.url}
+                        alt={currentImage.alt}
+                        className="absolute inset-0 w-full h-full object-cover"
                     />
                 )}
+
+                {/* 💡 LAYER 2: The Sliding (Incoming/New) Image */}
+                {/* This div contains the new image and slides up to cover Layer 1 */}
+                {/* It starts invisible and off-screen, then animates in. */}
+                {/* Use a div with a ref for GSAP, and render the image inside */}
+                <div
+                    ref={incomingImageLayerRef}
+                    className="absolute inset-0 w-full h-full transform-gpu" // Added transform-gpu for performance
+                    style={{ y: '100%', opacity: 0 }} // Initial state: off-screen and invisible
+                >
+                    {incomingImage && (
+                        <img
+                            src={incomingImage.url}
+                            alt={incomingImage.alt}
+                            className="absolute inset-0 w-full h-full object-cover"
+                        />
+                    )}
+                </div>
             </div>
         </div>
     );
