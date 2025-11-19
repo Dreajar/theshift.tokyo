@@ -41,12 +41,13 @@ export default function Home() {
             <div className="bg-zinc-100 h-screen flex flex-col justify-center items-center text-black">
                 <button className="absolute translate-x-144 -translate-y-96 border-black border-[1px] h-7 w-12 rounded-full">JA</button>
                 <div className="-space-y-[92px] -translate-y-24">
-                    <h1 className="mt-40 text-[152px] w-200 -translate-x-12 font-display">EXPLORING</h1>
+                    <h1 className="mt-40 text-[152px] w-200 -translate-x-12">EXPLORING</h1>
                     <h1 className="text-[152px] w-200 -translate-x-[320px]">THE SHIFT</h1>
-                    <h1 className="text-[152px] w-200 font-display">OF TODAY</h1>
+                    <h1 className="text-[152px] w-200">OF TODAY</h1>
+
                 </div>
                 {/* FIX: Change HTML/CSS editor to not strip these whitespaces lmao */}
-                <pre className="absolute text-sm translate-x-120 -translate-y-12 w-80 leading-4">
+                <pre className="absolute text-sm translate-x-120 w-80 leading-4">
                     ________THE SHIFT CREATES FUTURE-<br />
                     INSPIRED PROJECTS FOR PEOPLE AND<br />
                     BUSINESSES DESIRING A SHIFT. BASED IN<br />
@@ -71,58 +72,30 @@ export default function Home() {
                 <PortfolioList />
             </div>
 
-            <div className="bg-neutral-900 flex flex-col items-center">
+            <div className="bg-neutral-900 h-[200vh] flex flex-col items-center">
                 <h1 className="font-medium text-xl text-neutral-200 mt-16 mb-60 w-44 text-center">OUR TERRITORY AND FIELDS</h1>
                 <a href="/about_us" className="underline hover:no-underline text-neutral-200 text-lg">ABOUT US</a>
                 <hr className="h-[1px] w-11/12 bg-neutral-500 my-20 opacity-20"></hr>
-                <InfiniteMarquee bannerString={topString} direction="left" />
-                <InfiniteMarquee bannerString={bottomString} direction="right" />
-                <div className="h-80 w-11/12 border-b-[1px] border-neutral-700 border-opacity-20"></div>
-
+                <p>Sliding to the left banner</p>
+                <p>Sliding to the right banner</p>
+                <hr className="border-t border-gray-400"></hr>
             </div>
 
-            {/* The nav bar should end here */}
-            <div className="bg-neutral-900 h-[100vh] w-full grid grid-rows-7 items-center">
-                <div className="row-span-2 flex justify-between mx-20 items-center h-full">
-                    <button className="text-center text-neutral-200 h-7 w-14 rounded-full border-neutral-200 border-[1px]">JA</button>
-                    <p className="w-48 text-center">BASED IN TOKYO WORKING WORLDWIDE</p>
-                    <div className="flex items-center" onClick={() => {
-                        window.scrollTo({
-                            top: 0, behavior: 'smooth'
-                        });
-                    }}>
-                        <span className="text-xl font-light">
-                            BACK TO TOP
-                        </span>
-                        <button className="rounded-full text-neutral-500 bg-zinc-100 h-20 w-20 ml-4 flex items-center justify-center">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
-                                {/* The SVG path will use the default text color of the button (which should be dark 
-                if the button BG is light) */}
-                                <path fill="currentColor" d="M11 20V7.825l-5.6 5.6L4 12l8-8l8 8l-1.4 1.425l-5.6-5.6V20z" />
-                            </svg>
-                        </button>
+            <div className="h-[100vh] w-full grid grid-rows-4 items-center">
+                <div className="flex justify-around items-center h-full w-11/12 border-b border-neutral-500">
+                    <button>JA</button>
+                    <p>BASED IN TOKYO WORKING WORLDWIDE</p>
+                    <div>
+                        <p>BACK TO TOP</p>
+                        <button>Up arrow</button>
                     </div>
                 </div>
+                <p className="row-span-2 justify-center text-9xl text-neutral-200 flex text-center h-full w-11/12 border-b border-neutral-500">GET IN TOUCH</p>
 
-                <div className="row-span-4 justify-center text-9xl text-neutral-200 flex text-center h-full w-full items-center relative">
-                    <div className="absolute top-0 left-0 right-0 h-[1px] flex justify-center">
-                        <hr className="w-11/12 bg-neutral-500 opacity-20 h-full" />
-                    </div>
-
-                    <span className="flex space-x-10 mx-20">
-                        <span>GET</span>
-                        <span>IN</span>
-                        <span>TOUCH</span>
-                    </span>
-
-                    <div className="absolute bottom-0 left-0 right-0 h-[1px] flex justify-center">
-                        <hr className="w-11/12 bg-neutral-500 opacity-20 h-full" />
-                    </div>
-                </div>
-                <div className="h-full flex justify-between mx-20 items-center">
+                <div className="h-full flex justify-around items-center">
                     <p>@2021</p>
                     <a href="www.instagram.com" className="underline hover:no-underline">INSTAGRAM</a>
-                    <button className="text-center text-neutral-200 h-7 w-28 rounded-full border-neutral-200 border-[1px]">DARK MODE</button>
+                    <button>DARK MODE</button>
                 </div>
             </div>
         </div>
@@ -170,11 +143,11 @@ type ListItemProps = {
 };
 
 const listItems: ListItemProps[] = [
-    { num: '01', title: 'FOCUS ON STRETCH PLEATS', height: 'h-72', width: 'w-5/8', hrBottom: 0 },
-    { num: '02', title: 'LEVEL OF DISTANCE', height: 'h-72', width: 'w-1/2', hrBottom: 0 },
-    { num: '03', title: 'IPSA AQUA PLAY ART', height: 'h-72', width: 'w-1/3', hrBottom: 0 },
-    { num: '04', title: 'ATELIER WEN', height: 'h-72', width: 'w-1/2', hrBottom: 0 },
-    { num: '05', title: '3D:MIX', height: 'h-136', width: 'w-1/2', hrBottom: 64 },
+    { num: '01', title: 'FOCUS ON STRETCH PLEATS', height: 'h-72', width: 'w-5/8', hrBottom: 4 },
+    { num: '02', title: 'LEVEL OF DISTANCE', height: 'h-72', width: 'w-1/2', hrBottom: 4 },
+    { num: '03', title: 'IPSA AQUA PLAY ART', height: 'h-72', width: 'w-1/3', hrBottom: 4 },
+    { num: '04', title: 'ATELIER WEN', height: 'h-72', width: 'w-1/2', hrBottom: 4 },
+    { num: '05', title: '3D:MIX', height: 'h-136', width: 'w-1/2', hrBottom: 68 },
 ];
 
 const ListItem: React.FC<ListItemProps> = ({ num, title, height, width, hrBottom }) => {
@@ -267,54 +240,33 @@ const PortfolioList = () => {
     );
 };
 
-const topString = "SHIFT    PRODUCE    DIRECTION    DESIGN    TECHNOLOGY    CONSULTING    BRANDING    STRATEGY    SHIFT    PRODUCE    DIRECTION    DESIGN    TECHNOLOGY    CONSULTING    BRANDING    STRATEGY    ";
-const bottomString = "FASHION    ENTERTAINMENT    PRODUCT    EVENT    SPORTS    LIVING SPACE    EDUCATION    FOOD    MUSIC    FASHION    ENTERTAINMENT    PRODUCT    EVENT    SPORTS    LIVING SPACE    EDUCATION    FOOD    MUSIC    ";
-
-type InfiniteMarqueeProps = {
-    bannerString: string;
-    direction: "left" | "right"; // 1 = to the right
-}
-
-const InfiniteMarquee: React.FC<InfiniteMarqueeProps> = ({ bannerString, direction }) => {
+const topString = "SHIFT PRODUCE DIRECTION DESIGN TECHNOLOGY CONSULTING BRANDING STRATEGY";
+function TopInfiniteMarquee() {
     const containerRef = useRef<HTMLDivElement>(null);
     const textRef = useRef<HTMLDivElement>(null);
     useGSAP(() => {
+        const container = containerRef.current;
         const text = textRef.current;
-        if (!text) return;
-        const singleBannerWidth = text.scrollWidth / 2;
-        const targetX = direction === 'left' ? -singleBannerWidth : singleBannerWidth;
-        let fromX: number;
-        let toX: number;
+        if (!container || !text) return;
 
-        if (direction === "left") {
-            fromX = 0;
-            toX = -singleBannerWidth;
-        } else {
-            fromX = -singleBannerWidth;
-            toX = 0;
-        }
+        const distanceToMove = text.scrollWidth / 2;
+        const duration = 10;
+        gsap.to(text, {
+            x: -distanceToMove, duration: duration, ease: 'none', repeat: -1,
+        });
 
-        gsap.fromTo(text, { x: fromX },
-            {
-                x: toX,
-                duration: 150,
-                ease: 'none',
-                repeat: -1,
-                overwrite: 'auto'
-            }
-        );
-
-    }, { scope: containerRef, dependencies: [direction] });
+    }, { scope: containerRef, dependencies: [] });
 
     return (
         <div
             ref={containerRef}
-            className="w-full overflow-hidden whitespace-nowrap bg-neutral-900 text-white py-4"
+            className="w-full overflow-hidden whitespace-nowrap bg-neutral-900 text-white py-4 text-4xl font-bold"
         >
-            {/* The inline-block is crucial for the scrollWidth calculation to work */}
-            <div ref={textRef} className="inline-block text-9xl font-thin tracking-wide whitespace-pre">
-                {bannerString}
-                {bannerString}
+            <div
+                ref={textRef}
+                className="inline-block"
+            >
+                {topString}
             </div>
         </div>
     );
