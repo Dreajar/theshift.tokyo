@@ -193,12 +193,19 @@ type ImageRevealProps = {
 
 const ImageRevealArea: React.FC<ImageRevealProps> = ({ hoveredImage, isVisible }) => {
     const imageContainerRef = useRef<HTMLDivElement>(null);
+    const contentRef = useRef<HTMLDivElement>(null);
 
+    // 💡 1. State for the image currently fully visible (the 'old' one)
+    const [currentImage, setCurrentImage] = useState(hoveredImage);
+    // 💡 2. State for the image that is actively being revealed (the 'new' one)
+    const [incomingImage, setIncomingImage] = useState(hoveredImage);
+    const imageTimeline = useRef<gsap.core.Timeline | null>(null);
+
+    // 1. Mouse Tracking Logic (remains the same)
     useGSAP(() => {
         const container = imageContainerRef.current;
         if (!container) return;
 
-        // 💡 CRITICAL: Ensure the initial state is hidden (autoAlpha: 0)
         gsap.set(container, { scale: 0.8, autoAlpha: 0 });
 
         const HALF_SIZE = 150;
@@ -217,47 +224,108 @@ const ImageRevealArea: React.FC<ImageRevealProps> = ({ hoveredImage, isVisible }
         };
     }, {});
 
+    // 2. Image Visibility (Fade In/Out of the square container)
     useEffect(() => {
         const container = imageContainerRef.current;
         if (!container) return;
 
-        // 💡 FIX: Check if isVisible is TRUE to fade IN.
         if (isVisible) {
-            // Scale up and fade in
             gsap.to(container, {
                 scale: 1,
-                autoAlpha: 1, // Fades IN when isVisible is TRUE
+                autoAlpha: 1,
                 duration: 0.4,
                 ease: 'power2.out',
             });
         } else {
-            // Fade out when isVisible is FALSE
             gsap.to(container, {
                 scale: 0.8,
-                autoAlpha: 0, // Fades OUT when isVisible is FALSE
+                autoAlpha: 0,
                 duration: 0.4,
                 ease: 'power2.in',
             })
         }
     }, [isVisible]);
 
+
+    // 💡 Content Transition (Slide Up Cover Effect)
+    useEffect(() => {
+        if (!hoveredImage) return;
+
+        // Check if the image is actually changing
+        if (currentImage?.url === hoveredImage.url) {
+            // If the image is the same, just ensure we have it set.
+            setIncomingImage(hoveredImage);
+            return;
+        }
+
+        const content = contentRef.current;
+        if (!content) return;
+
+        // 1. Set the new image data for the sliding layer
+        setIncomingImage(hoveredImage);
+
+        // 2. Initialize or reuse the timeline
+        if (imageTimeline.current) {
+            imageTimeline.current.kill(); // Kill any running animation
+        }
+        imageTimeline.current = gsap.timeline({ paused: true });
+
+        // 3. Set the sliding content layer (the incoming image) off-screen (y: 100%)
+        // We use the absolute positioning on the child <img> (see return statement)
+        imageTimeline.current
+            .set(content, { y: '100%' })
+
+            // 4. Animate the sliding content (new image) up to cover the old image (y: 0%)
+            .to(content, {
+                y: '0%',
+                duration: 0.5,
+                ease: 'power2.out',
+                onComplete: () => {
+                    // 5. Once the animation is complete, update the 'currentImage' 
+                    // state so the DOM renders the new image as the static background.
+                    setCurrentImage(hoveredImage);
+                    // 6. Reset the incoming image state and position for the next transition
+                    setIncomingImage(null);
+                }
+            }, 0);
+
+        imageTimeline.current.play();
+
+    }, [hoveredImage]);
+
     return (
         <div
             ref={imageContainerRef}
-            // Position the container fixed/absolute so it can move freely with the mouse.
-            // Use 'pointer-events-none' so it doesn't block clicks on the list items.
             className="fixed top-0 left-0 z-50 pointer-events-none transform-gpu"
         >
-            <div className="w-[300px] h-[300px] rounded-lg shadow-2xl">
-                {/* Use the dynamically loaded image */}
-                {hoveredImage && (
+            {/* 💡 The outer container clips the sliding content and defines the shape */}
+            <div className="w-[300px] h-[300px] rounded-lg shadow-2xl overflow-hidden relative">
+
+                {/* 💡 LAYER 1: The Stationary (Old/Current) Image */}
+                {currentImage && (
                     <img
-                        key={hoveredImage.url} // Key forces a re-render/swap of the image
-                        src={hoveredImage.url}
-                        alt={hoveredImage.alt}
-                        className="w-full h-full object-cover"
+                        key={currentImage.url}
+                        src={currentImage.url}
+                        alt={currentImage.alt}
+                        className="absolute inset-0 w-full h-full object-cover" // Base layer
                     />
                 )}
+
+                {/* 💡 LAYER 2: The Sliding (Incoming) Image Wrapper */}
+                {/* This wrapper is what GSAP translates, covering the currentImage */}
+                <div
+                    ref={contentRef}
+                    className="absolute inset-0 w-full h-full"
+                >
+                    {incomingImage && (
+                        <img
+                            key={incomingImage.url + '-incoming'} // Unique key for the sliding element
+                            src={incomingImage.url}
+                            alt={incomingImage.alt}
+                            className="absolute inset-0 w-full h-full object-cover"
+                        />
+                    )}
+                </div>
             </div>
         </div>
     );
