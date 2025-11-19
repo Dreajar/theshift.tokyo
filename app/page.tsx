@@ -21,6 +21,16 @@ export default function Home() {
         }
     }, [scrolled])
 
+    useEffect(() => {
+        (
+            async () => {
+                const LocomotiveScroll = (await import('locomotive-scroll')).default
+                const locomotiveScroll = new LocomotiveScroll();
+            }
+        )()
+    }, [])
+
+
     return (
         <div className="w-full flex flex-col no-scrollbar">
             <nav className="fixed">
@@ -54,7 +64,17 @@ export default function Home() {
                 <div className="absolute bottom-20 left-20">
                     <DeviceClock />
                 </div>
-                <div className="absolute bottom-0 right-20 -mb-40 h-112 w-84 rounded-full bg-red-400"></div>
+                <div className="absolute bottom-0 right-20 -mb-40 h-112 w-84 rounded-full overflow-hidden">
+                    <video
+                        className="block h-full w-full object-cover"
+                        src="https://d17292ff19wl6v.cloudfront.net/v2/wp/wp-content/uploads/2021/09/07141146/kolor_h264.mp4"
+                        muted
+                        playsInline
+                        loop
+                        preload="metadata"
+                        autoPlay // Consider adding autoPlay for videos that must start immediately (often required with 'muted')
+                    />
+                </div>
             </div>
 
             <div className="bg-gray-950 h-screen w-full flex flex-col justify-center items-center">
@@ -161,23 +181,106 @@ function DeviceClock() {
     );
 }
 
+type ImageDetails = {
+    url: string;
+    alt: string;
+}
+
+type ImageRevealProps = {
+    hoveredImage: ImageDetails | null;
+    isVisible: boolean;
+}
+
+const ImageRevealArea: React.FC<ImageRevealProps> = ({ hoveredImage, isVisible }) => {
+    const imageContainerRef = useRef<HTMLDivElement>(null);
+    useGSAP(() => {
+        const container = imageContainerRef.current;
+        if (!container) return;
+        gsap.set(container, { scale: 0.8, autoAlpha: 0 });
+        const HALF_SIZE = 150;
+        const handleMouseMove = (e: MouseEvent) => {
+            gsap.to(container, {
+                x: e.clientX - HALF_SIZE,
+                y: e.clientY - HALF_SIZE,
+                duration: 0.8,
+                ease: 'power3.out',
+            });
+        };
+
+        window.addEventListener('mousemove', handleMouseMove);
+        return () => {
+            window.removeEventListener('mousemove', handleMouseMove);
+        };
+    }, {});
+
+    useEffect(() => {
+        const container = imageContainerRef.current;
+        if (!container) return;
+        if (!isVisible) {
+            // Scale up and fade in
+            gsap.to(container, {
+                scale: 1,
+                autoAlpha: 1,
+                duration: 0.4,
+                ease: 'power2.out',
+            });
+        } else {
+            gsap.to(container, {
+                scale: 0.8,
+                autoAlpha: 0,
+                duration: 0.4,
+                ease: 'power2.in',
+            })
+        }
+    }, [isVisible]);
+
+    return (
+        <div
+            ref={imageContainerRef}
+            // Position the container fixed/absolute so it can move freely with the mouse.
+            // Use 'pointer-events-none' so it doesn't block clicks on the list items.
+            className="fixed top-0 left-0 z-50 pointer-events-none transform-gpu"
+        >
+            <div className="w-[300px] h-[300px] rounded-lg shadow-2xl">
+                {/* Use the dynamically loaded image */}
+                {hoveredImage && (
+                    <img
+                        key={hoveredImage.url} // Key forces a re-render/swap of the image
+                        src={hoveredImage.url}
+                        alt={hoveredImage.alt}
+                        className="w-full h-full object-cover"
+                    />
+                )}
+            </div>
+        </div>
+    );
+}
+
 type ListItemProps = {
     num: string;
     title: string;
     height: string;
     width: string;
     hrBottom: number;
+    image: ImageDetails;
 };
 
 const listItems: ListItemProps[] = [
-    { num: '01', title: 'FOCUS ON STRETCH PLEATS', height: 'h-72', width: 'w-5/12', hrBottom: 0 },
-    { num: '02', title: 'LEVEL OF DISTANCE', height: 'h-72', width: 'w-3/8', hrBottom: 0 },
-    { num: '03', title: 'IPSA AQUA PLAY ART', height: 'h-72', width: 'w-1/3', hrBottom: 0 },
-    { num: '04', title: 'ATELIER WEN', height: 'h-72', width: 'w-1/2', hrBottom: 0 },
-    { num: '05', title: '3D:MIX', height: 'h-72', width: 'w-1/2', hrBottom: 0 }
+    { num: '01', title: 'FOCUS ON STRETCH PLEATS', height: 'h-72', width: 'w-5/12', hrBottom: 0, image: { url: '/portfolio_images/focus on stretch pleats.webp', alt: 'Stretch Pleats' } },
+    { num: '02', title: 'LEVEL OF DISTANCE', height: 'h-72', width: 'w-3/8', hrBottom: 0, image: { url: '/portfolio_images/level of distance.webp', alt: 'Level of Distance' } },
+    { num: '03', title: 'IPSA AQUA PLAY ART', height: 'h-72', width: 'w-1/3', hrBottom: 0, image: { url: '/portfolio_images/ipsa aqua play art.webp', alt: 'Ipsa Aqua Play Art' } },
+    { num: '04', title: 'ATELIER WEN', height: 'h-72', width: 'w-1/2', hrBottom: 0, image: { url: '/portfolio_images/atelier wen.webp', alt: 'Atelier Wen' } },
+    { num: '05', title: '3D:MIX', height: 'h-72', width: 'w-1/2', hrBottom: 0, image: { url: '/portfolio_images/3d mix.webp', alt: '3D: Mix' } }
 ];
 
-const ListItem: React.FC<ListItemProps> = ({ num, title, height, width, hrBottom }) => {
+type MouseHandlers = {
+    onMouseEnter: (image: ImageDetails) => void;
+    onMouseLeave: () => void;
+}
+
+const ListItem: React.FC<ListItemProps & MouseHandlers> = ({
+    num, title, height, width, hrBottom, image, onMouseEnter, onMouseLeave
+}) => {
     // 1. Ref for the entire li element (used for useGSAP scope)
     const listItemRef = useRef<HTMLLIElement>(null);
 
@@ -207,38 +310,45 @@ const ListItem: React.FC<ListItemProps> = ({ num, title, height, width, hrBottom
     }, { scope: listItemRef, dependencies: [] }); // Empty dependencies ensures it runs only once
 
     // Handler to play the animation forward on mouse enter/focus
-    const handleMouseEnter = () => {
+    const handleItemMouseEnter = () => {
         tlRef.current?.play();
+        onMouseEnter(image); // 🎯 Pass the image data to the parent
     };
 
+
     // Handler to reverse the animation on mouse leave/blur
-    const handleMouseLeave = () => {
+    const handleItemMouseLeave = () => {
         tlRef.current?.reverse();
+        onMouseLeave(); // 🎯 Signal the parent to hide the image
     };
+
 
     return (
         <li
             ref={listItemRef} // Attach the scope ref here
             tabIndex={0}
             className={`${height} w-full flex relative mt-20 cursor-pointer`}
-            onMouseEnter={handleMouseEnter}
-            onMouseLeave={handleMouseLeave}
-            onFocus={handleMouseEnter} // Handle keyboard focus
-            onBlur={handleMouseLeave}
+            onMouseEnter={handleItemMouseEnter}
+            onMouseLeave={handleItemMouseLeave}
+            onFocus={handleItemMouseEnter} // Handle keyboard focus
+            onBlur={handleItemMouseLeave}
         >
-            <span
-                ref={numRef}
-                className="text-neutral-500 text-sm ml-64 mr-10 relative z-10 inline-block transform-gpu"
-            >
-                ( {num} )
-            </span>
+            {/* We add this div so onMouseEnter gets the full height so it doesn't disappear halfway/early */}
+            <div className="flex items-start h-full w-full pointer-events-none">
+                <span
+                    ref={numRef}
+                    className="text-neutral-500 text-sm ml-64 mr-10 relative inline-block transform-gpu"
+                >
+                    ( {num} )
+                </span>
 
-            <p
-                ref={titleRef}
-                className={`text-8xl text-left text-neutral-900 ${width} relative z-10 inline-block transform-gpu font-[Cormorant_Upright]`}
-            >
-                {title}
-            </p>
+                <p
+                    ref={titleRef}
+                    className={`text-8xl text-left text-neutral-900 ${width} relative z-10 inline-block transform-gpu font-[Cormorant_Upright]`}
+                >
+                    {title}
+                </p>
+            </div>
 
             {/* The HR separator */}
             <hr className={`h-[2px] w-11/12 bg-neutral-500 opacity-20 absolute bottom-${hrBottom} left-1/2 -translate-x-1/2`}></hr>
@@ -246,20 +356,38 @@ const ListItem: React.FC<ListItemProps> = ({ num, title, height, width, hrBottom
     );
 };
 
-// Main component to render the list
+// NOTE: Box around cursor: overflow-hidden
 const PortfolioList = () => {
+    const [currentImage, setCurrentImage] = useState<ImageDetails | null>(null);
+    const [isImageVisible, setIsImageVisible] = useState(false);
+
+    const handleMouseEnter = (image: ImageDetails) => {
+        setCurrentImage(image);
+        setIsImageVisible(true);
+    };
+
+    const handleMouseLeave = () => {
+        setIsImageVisible(false);
+    };
+
     return (
         <div className="min-h-screen w-full bg-zinc-100 text-neutral-900 font-inter">
+            <ImageRevealArea
+                hoveredImage={currentImage}
+                isVisible={isImageVisible}
+            />
             <ol className="items-start w-full">
                 {listItems.map((item, index) => (
                     <ListItem
-                        // Using index as key is acceptable here since the list is static
                         key={index}
                         num={item.num}
                         title={item.title}
                         height={item.height}
                         width={item.width}
                         hrBottom={item.hrBottom}
+                        image={item.image} // Pass image data
+                        onMouseEnter={handleMouseEnter} // Pass handlers down
+                        onMouseLeave={handleMouseLeave} // Pass handlers down
                     />
                 ))}
             </ol>
