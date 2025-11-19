@@ -193,10 +193,14 @@ type ImageRevealProps = {
 
 const ImageRevealArea: React.FC<ImageRevealProps> = ({ hoveredImage, isVisible }) => {
     const imageContainerRef = useRef<HTMLDivElement>(null);
+
     useGSAP(() => {
         const container = imageContainerRef.current;
         if (!container) return;
+
+        // 💡 CRITICAL: Ensure the initial state is hidden (autoAlpha: 0)
         gsap.set(container, { scale: 0.8, autoAlpha: 0 });
+
         const HALF_SIZE = 150;
         const handleMouseMove = (e: MouseEvent) => {
             gsap.to(container, {
@@ -216,18 +220,21 @@ const ImageRevealArea: React.FC<ImageRevealProps> = ({ hoveredImage, isVisible }
     useEffect(() => {
         const container = imageContainerRef.current;
         if (!container) return;
-        if (!isVisible) {
+
+        // 💡 FIX: Check if isVisible is TRUE to fade IN.
+        if (isVisible) {
             // Scale up and fade in
             gsap.to(container, {
                 scale: 1,
-                autoAlpha: 1,
+                autoAlpha: 1, // Fades IN when isVisible is TRUE
                 duration: 0.4,
                 ease: 'power2.out',
             });
         } else {
+            // Fade out when isVisible is FALSE
             gsap.to(container, {
                 scale: 0.8,
-                autoAlpha: 0,
+                autoAlpha: 0, // Fades OUT when isVisible is FALSE
                 duration: 0.4,
                 ease: 'power2.in',
             })
@@ -254,7 +261,7 @@ const ImageRevealArea: React.FC<ImageRevealProps> = ({ hoveredImage, isVisible }
             </div>
         </div>
     );
-}
+};
 
 type ListItemProps = {
     num: string;
@@ -296,7 +303,10 @@ const ListItem: React.FC<ListItemProps & MouseHandlers> = ({
         // Create the timeline, paused by default
         const tl = gsap.timeline({
             paused: true,
-            defaults: { duration: 0.6, ease: 'power2.inOut' }
+            defaults: { duration: 0.6, ease: 'power2.inOut' },
+            onReverseComplete: () => {
+                onMouseLeave();
+            }
         });
 
         // Animate both the number span and the title paragraph to the right
@@ -319,7 +329,6 @@ const ListItem: React.FC<ListItemProps & MouseHandlers> = ({
     // Handler to reverse the animation on mouse leave/blur
     const handleItemMouseLeave = () => {
         tlRef.current?.reverse();
-        onMouseLeave(); // 🎯 Signal the parent to hide the image
     };
 
 
@@ -344,7 +353,7 @@ const ListItem: React.FC<ListItemProps & MouseHandlers> = ({
 
                 <p
                     ref={titleRef}
-                    className={`text-8xl text-left text-neutral-900 ${width} relative z-10 inline-block transform-gpu font-[Cormorant_Upright]`}
+                    className={`text-8xl text-left text-neutral-900 ${width} relative inline-block transform-gpu font-[Cormorant_Upright]`}
                 >
                     {title}
                 </p>
@@ -360,12 +369,16 @@ const ListItem: React.FC<ListItemProps & MouseHandlers> = ({
 const PortfolioList = () => {
     const [currentImage, setCurrentImage] = useState<ImageDetails | null>(null);
     const [isImageVisible, setIsImageVisible] = useState(false);
+    // 💡 Add a Ref to hold the timeout ID for the mouseLeave event
+    const leaveTimeoutRef = useRef<number | null>(null);
 
     const handleMouseEnter = (image: ImageDetails) => {
+        // Immediate entry logic:
         setCurrentImage(image);
         setIsImageVisible(true);
     };
 
+    // 💡 This function now needs to be called when the GSAP animation finishes reversing.
     const handleMouseLeave = () => {
         setIsImageVisible(false);
     };
@@ -376,21 +389,23 @@ const PortfolioList = () => {
                 hoveredImage={currentImage}
                 isVisible={isImageVisible}
             />
-            <ol className="items-start w-full">
-                {listItems.map((item, index) => (
-                    <ListItem
-                        key={index}
-                        num={item.num}
-                        title={item.title}
-                        height={item.height}
-                        width={item.width}
-                        hrBottom={item.hrBottom}
-                        image={item.image} // Pass image data
-                        onMouseEnter={handleMouseEnter} // Pass handlers down
-                        onMouseLeave={handleMouseLeave} // Pass handlers down
-                    />
-                ))}
-            </ol>
+            <div className="w-full" onMouseLeave={handleMouseLeave}>
+                <ol className="items-start w-full">
+                    {listItems.map((item, index) => (
+                        <ListItem
+                            key={index}
+                            num={item.num}
+                            title={item.title}
+                            height={item.height}
+                            width={item.width}
+                            hrBottom={item.hrBottom}
+                            image={item.image} // Pass image data
+                            onMouseEnter={handleMouseEnter} // Pass handlers down
+                            onMouseLeave={handleMouseLeave} // Pass handlers down
+                        />
+                    ))}
+                </ol>
+            </div>
         </div>
     );
 };
