@@ -243,29 +243,34 @@ const ImageRevealArea: React.FC<ImageRevealProps> = ({ hoveredImage, isVisible }
     }, [isVisible]);
 
 
-    // 💡 Content Transition (Slide Up Cover Effect)
-    // 💡 Content Transition (Slide Up Cover Effect) - SIMPLIFIED LOGIC
+    // 3. FIX: Manage Image URL update (Runs first when a new image is hovered)
+    // This updates the URL state and forces a React re-render.
     useEffect(() => {
-        if (!hoveredImage) return;
+        if (hoveredImage && hoveredImage.url !== displayedImageUrl) {
+            setDisplayedImageUrl(hoveredImage.url);
+        }
+    }, [hoveredImage]); // Only depends on the incoming hoveredImage
+
+
+    // 4. FIX: Run Animation after URL state updates (Runs *after* the re-render when the DOM has the new image URL)
+    useEffect(() => {
+        if (!displayedImageUrl) return;
 
         const imageElement = imageRef.current;
-        if (!imageElement) return;
 
-        // If the URL hasn't changed, do nothing
-        if (displayedImageUrl === hoveredImage.url) {
+        // CRITICAL CHECK: Ensure the DOM element's source matches the URL we are about to animate.
+        // Also check if we just mounted (imageElement.src check)
+        if (!imageElement || imageElement.src.indexOf(displayedImageUrl) === -1) {
             return;
         }
 
-        // 1. Kill any existing animation
+        // Kill any previous animation
         if (imageTimeline.current) {
             imageTimeline.current.kill();
         }
         imageTimeline.current = gsap.timeline({ paused: true });
 
-        // 2. Update the image source (This is done first)
-        setDisplayedImageUrl(hoveredImage.url);
-
-        // 3. Set the image element off-screen (y: 100%) and then animate it up (stacking effect)
+        // Set the element off-screen (y: 100%) and then animate it up (slide-in)
         imageTimeline.current
             .fromTo(imageElement,
                 { y: '100%' },
@@ -273,13 +278,12 @@ const ImageRevealArea: React.FC<ImageRevealProps> = ({ hoveredImage, isVisible }
                     y: '0%',
                     duration: 0.5,
                     ease: 'power2.out',
-                    // The image is now the new, static image. No cleanup needed.
                 }
             )
 
         imageTimeline.current.play();
 
-    }, [hoveredImage, displayedImageUrl]);
+    }, [displayedImageUrl]); // Dependency on the DOM-bound URL state, ensuring it runs after state update
 
     return (
         <div
@@ -288,8 +292,6 @@ const ImageRevealArea: React.FC<ImageRevealProps> = ({ hoveredImage, isVisible }
         >
             <div className="w-[300px] h-[300px] rounded-lg shadow-2xl overflow-hidden relative">
 
-                {/* 💡 SINGLE LAYER: This one layer holds the image and handles the slide animation */}
-                {/* The new image will slide up and remain visible on this layer */}
                 {displayedImageUrl && (
                     <img
                         ref={imageRef}
