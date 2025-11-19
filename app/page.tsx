@@ -193,12 +193,8 @@ type ImageRevealProps = {
 
 const ImageRevealArea: React.FC<ImageRevealProps> = ({ hoveredImage, isVisible }) => {
     const imageContainerRef = useRef<HTMLDivElement>(null);
-    const contentRef = useRef<HTMLDivElement>(null);
-
-    // 💡 1. State for the image currently fully visible (the 'old' one)
-    const [currentImage, setCurrentImage] = useState(hoveredImage);
-    // 💡 2. State for the image that is actively being revealed (the 'new' one)
-    const [incomingImage, setIncomingImage] = useState(hoveredImage);
+    const imageRef = useRef<HTMLImageElement>(null);
+    const [displayedImageUrl, setDisplayedImageUrl] = useState(hoveredImage?.url || null);
     const imageTimeline = useRef<gsap.core.Timeline | null>(null);
 
     // 1. Mouse Tracking Logic (remains the same)
@@ -248,84 +244,62 @@ const ImageRevealArea: React.FC<ImageRevealProps> = ({ hoveredImage, isVisible }
 
 
     // 💡 Content Transition (Slide Up Cover Effect)
+    // 💡 Content Transition (Slide Up Cover Effect) - SIMPLIFIED LOGIC
     useEffect(() => {
         if (!hoveredImage) return;
 
-        // Check if the image is actually changing
-        if (currentImage?.url === hoveredImage.url) {
-            // If the image is the same, just ensure we have it set.
-            setIncomingImage(hoveredImage);
+        const imageElement = imageRef.current;
+        if (!imageElement) return;
+
+        // If the URL hasn't changed, do nothing
+        if (displayedImageUrl === hoveredImage.url) {
             return;
         }
 
-        const content = contentRef.current;
-        if (!content) return;
-
-        // 1. Set the new image data for the sliding layer
-        setIncomingImage(hoveredImage);
-
-        // 2. Initialize or reuse the timeline
+        // 1. Kill any existing animation
         if (imageTimeline.current) {
-            imageTimeline.current.kill(); // Kill any running animation
+            imageTimeline.current.kill();
         }
         imageTimeline.current = gsap.timeline({ paused: true });
 
-        // 3. Set the sliding content layer (the incoming image) off-screen (y: 100%)
-        // We use the absolute positioning on the child <img> (see return statement)
-        imageTimeline.current
-            .set(content, { y: '100%' })
+        // 2. Update the image source (This is done first)
+        setDisplayedImageUrl(hoveredImage.url);
 
-            // 4. Animate the sliding content (new image) up to cover the old image (y: 0%)
-            .to(content, {
-                y: '0%',
-                duration: 0.5,
-                ease: 'power2.out',
-                onComplete: () => {
-                    // 5. Once the animation is complete, update the 'currentImage' 
-                    // state so the DOM renders the new image as the static background.
-                    setCurrentImage(hoveredImage);
-                    // 6. Reset the incoming image state and position for the next transition
-                    setIncomingImage(null);
+        // 3. Set the image element off-screen (y: 100%) and then animate it up (stacking effect)
+        imageTimeline.current
+            .fromTo(imageElement,
+                { y: '100%' },
+                {
+                    y: '0%',
+                    duration: 0.5,
+                    ease: 'power2.out',
+                    // The image is now the new, static image. No cleanup needed.
                 }
-            }, 0);
+            )
 
         imageTimeline.current.play();
 
-    }, [hoveredImage]);
+    }, [hoveredImage, displayedImageUrl]);
 
     return (
         <div
             ref={imageContainerRef}
             className="fixed top-0 left-0 z-50 pointer-events-none transform-gpu"
         >
-            {/* 💡 The outer container clips the sliding content and defines the shape */}
             <div className="w-[300px] h-[300px] rounded-lg shadow-2xl overflow-hidden relative">
 
-                {/* 💡 LAYER 1: The Stationary (Old/Current) Image */}
-                {currentImage && (
+                {/* 💡 SINGLE LAYER: This one layer holds the image and handles the slide animation */}
+                {/* The new image will slide up and remain visible on this layer */}
+                {displayedImageUrl && (
                     <img
-                        key={currentImage.url}
-                        src={currentImage.url}
-                        alt={currentImage.alt}
-                        className="absolute inset-0 w-full h-full object-cover" // Base layer
+                        ref={imageRef}
+                        // Use a key to ensure React remounts/updates the element cleanly if needed, though state should handle it
+                        key={displayedImageUrl}
+                        src={displayedImageUrl}
+                        alt={hoveredImage?.alt || 'Portfolio Image'}
+                        className="absolute inset-0 w-full h-full object-cover transform-gpu" // Base layer
                     />
                 )}
-
-                {/* 💡 LAYER 2: The Sliding (Incoming) Image Wrapper */}
-                {/* This wrapper is what GSAP translates, covering the currentImage */}
-                <div
-                    ref={contentRef}
-                    className="absolute inset-0 w-full h-full"
-                >
-                    {incomingImage && (
-                        <img
-                            key={incomingImage.url + '-incoming'} // Unique key for the sliding element
-                            src={incomingImage.url}
-                            alt={incomingImage.alt}
-                            className="absolute inset-0 w-full h-full object-cover"
-                        />
-                    )}
-                </div>
             </div>
         </div>
     );
@@ -350,11 +324,10 @@ const listItems: ListItemProps[] = [
 
 type MouseHandlers = {
     onMouseEnter: (image: ImageDetails) => void;
-    onMouseLeave: () => void;
 }
 
 const ListItem: React.FC<ListItemProps & MouseHandlers> = ({
-    num, title, height, width, hrBottom, image, onMouseEnter, onMouseLeave
+    num, title, height, width, hrBottom, image, onMouseEnter
 }) => {
     // 1. Ref for the entire li element (used for useGSAP scope)
     const listItemRef = useRef<HTMLLIElement>(null);
@@ -372,9 +345,6 @@ const ListItem: React.FC<ListItemProps & MouseHandlers> = ({
         const tl = gsap.timeline({
             paused: true,
             defaults: { duration: 0.6, ease: 'power2.inOut' },
-            onReverseComplete: () => {
-                onMouseLeave();
-            }
         });
 
         // Animate both the number span and the title paragraph to the right
@@ -438,7 +408,6 @@ const PortfolioList = () => {
     const [currentImage, setCurrentImage] = useState<ImageDetails | null>(null);
     const [isImageVisible, setIsImageVisible] = useState(false);
     // 💡 Add a Ref to hold the timeout ID for the mouseLeave event
-    const leaveTimeoutRef = useRef<number | null>(null);
 
     const handleMouseEnter = (image: ImageDetails) => {
         // Immediate entry logic:
@@ -452,12 +421,12 @@ const PortfolioList = () => {
     };
 
     return (
-        <div className="min-h-screen w-full bg-zinc-100 text-neutral-900 font-inter">
+        <div className="min-h-screen w-full bg-zinc-100 text-neutral-900 font-inter" onMouseLeave={handleMouseLeave}>
             <ImageRevealArea
                 hoveredImage={currentImage}
                 isVisible={isImageVisible}
             />
-            <div className="w-full" onMouseLeave={handleMouseLeave}>
+            <div className="w-full">
                 <ol className="items-start w-full">
                     {listItems.map((item, index) => (
                         <ListItem
@@ -469,7 +438,6 @@ const PortfolioList = () => {
                             hrBottom={item.hrBottom}
                             image={item.image} // Pass image data
                             onMouseEnter={handleMouseEnter} // Pass handlers down
-                            onMouseLeave={handleMouseLeave} // Pass handlers down
                         />
                     ))}
                 </ol>
